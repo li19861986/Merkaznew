@@ -215,6 +215,16 @@ body{padding-bottom:92px}
 .go.wa2{background:var(--wa);color:#fff;pointer-events:auto}
 .go svg{width:20px;height:20px;fill:#fff}
 .dlg .nolim{background:#fde7f2;color:var(--pink);font-weight:800;font-size:13.5px;padding:9px;border-radius:12px;margin-bottom:14px}
+
+/* mega package */
+.card.mega{border:3px solid var(--gold);box-shadow:0 18px 44px rgba(8,15,60,.22)}
+.card.mega .top{background:radial-gradient(420px 160px at 90% 0%,rgba(233,30,140,.55),transparent 70%),linear-gradient(135deg,#080F3C,#243081);padding-top:18px}
+.card.mega .price{background:var(--gold);color:var(--navy)}
+.card.mega .price small{color:var(--navy)}
+.ribbon{display:inline-block;position:relative;z-index:1;background:var(--pink);color:#fff;font-weight:800;font-size:12.5px;padding:4px 10px;border-radius:999px;margin-bottom:8px}
+.card li.grp{display:block;border-bottom:none;padding:12px 0 2px;font-weight:800;font-size:14px;color:var(--navy);font-family:'Rubik','Heebo',sans-serif}
+.card li.grp:first-child{padding-top:4px}
+.incl{margin:8px 20px 0;background:#eef9e0;color:#3d6b0a;font-weight:700;font-size:13.5px;line-height:1.45;padding:10px 12px;border-radius:12px}
 /* mascots */
 .section-head{position:relative}
 .grid{position:relative;align-items:start;margin-top:40px}
@@ -372,6 +382,39 @@ footer .disc{color:var(--muted);font-size:12.5px;margin-top:16px;font-weight:600
       <div class="perk">🎁 הטבת חבילה — בובת ענק נוספת ב־<bdi>150 ₪</bdi></div>
       <button class="pick" type="button" aria-pressed="false">בחירת החבילה</button>
     </article>
+    <article class="card mega" data-pkg="קידוס מגה פסטיבל" data-price="5500" data-up="1">
+      <div class="top">
+        <div class="price">5500<small> ₪</small></div>
+        <div class="ribbon">🎪 החבילה הכי גדולה שלנו</div>
+        <div class="pkgname">קידוס מגה פסטיבל</div>
+        <div class="tag">אתם רק מגיעים, אנחנו מביאים הכל!</div>
+      </div>
+      <ul>
+        <li class="grp">🎭 בידור</li>
+        <li><span class="chk" style="background:var(--gold);color:var(--navy)">✓</span>2 הפעלות משולבות לבחירה</li>
+        <li><span class="chk" style="background:var(--gold);color:var(--navy)">✓</span>2 בובות ענק לבחירה</li>
+        <li><span class="chk" style="background:var(--gold);color:var(--navy)">✓</span>מכונת עשן ולדים או מכונת בועות</li>
+        <li><span class="chk" style="background:var(--gold);color:var(--navy)">✓</span>טקס עוגה מלהיב</li>
+        <li class="grp">🎨 תפאורה</li>
+        <li><span class="chk" style="background:var(--gold);color:var(--navy)">✓</span>תפאורת קונספט מלאה: קשת מתנפחת, רקע צילום, שטיח תואם ו־3 במות</li>
+        <li><span class="chk" style="background:var(--gold);color:var(--navy)">✓</span>מייצג דמות או עוגת מייצג לבחירה</li>
+        <li class="grp">🍔 אוכל</li>
+        <li><span class="chk" style="background:var(--gold);color:var(--navy)">✓</span>דוכן הגשה משולב: שניצלונים וצ'יפס + נקניקיות וצ'יפס · 60 מנות</li>
+        <li class="grp">🍭 מתוקים</li>
+        <li><span class="chk" style="background:var(--gold);color:var(--navy)">✓</span>דוכן אוטובוס מתנפח או דוכן יריד עם מכונת סוכר ופופקורן ללא הגבלה</li>
+        <li><span class="chk" style="background:var(--gold);color:var(--navy)">✓</span>בר ממתקים וחטיפים בדוכן מעוצב · 8 סוגים</li>
+        <li class="grp">🥤 שתייה</li>
+        <li><span class="chk" style="background:var(--gold);color:var(--navy)">✓</span>2 דיספנסרים שתייה קרה</li>
+        <li class="grp">✉️ שירות</li>
+        <li><span class="chk" style="background:var(--gold);color:var(--navy)">✓</span>2 מפעילים מקצועיים + 2 אנשי צוות להגשה</li>
+        <li><span class="chk" style="background:var(--gold);color:var(--navy)">✓</span>הזמנה דיגיטלית מעוצבת</li>
+        <li><span class="chk" style="background:var(--gold);color:var(--navy)">✓</span>מתאים עד 50 משתתפים</li>
+        <li><span class="chk" style="background:var(--gold);color:var(--navy)">✓</span>זמן חבילה: שעתיים וחצי</li>
+      </ul>
+      <div class="incl">✅ לא צריך להזמין קייטרינג, לקנות ממתקים, להביא שתייה או לסדר תפאורה – אנחנו דואגים להכל.</div>
+      <div class="perk">🎁 הטבת חבילה — 2 חוגגים נוספים ללא עלות!</div>
+      <button class="pick" type="button" aria-pressed="false">בחירת החבילה</button>
+    </article>
 
   </div>
 </section>
@@ -509,7 +552,7 @@ footer .disc{color:var(--muted);font-size:12.5px;margin-top:16px;font-weight:600
   var PHONE='972555570173', cards=[].slice.call(document.querySelectorAll('.card[data-pkg]')),
       rows=[].slice.call(document.querySelectorAll('.up-grid .row')), grid=document.querySelector('.up-grid'),
       lock=document.getElementById('uplock'), what=document.getElementById('what'), tot=document.getElementById('tot'),
-      send=document.getElementById('send'), pkg=null, wantUp=false, PERK={kid:{'חגיגת קונספט':100,'לחגוג בענק':100},doll:{'הכל כלול':150}};
+      send=document.getElementById('send'), pkg=null, wantUp=false, PERK={kid:{'חגיגת קונספט':100,'לחגוג בענק':100,'קידוס מגה פסטיבל':0},doll:{'הכל כלול':150}};
   function fmt(n){return n.toLocaleString('he-IL')+' ₪'}
   var toast=document.getElementById('toast'), tt;
   function showLock(){

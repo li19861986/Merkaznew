@@ -696,6 +696,11 @@ html.lenis,html.lenis body{height:auto}
   background:linear-gradient(90deg,#29B6F6,#7CC520,#FFD700,#E91E8C);transform-origin:right center;transform:scaleX(0)}
 @media(prefers-reduced-motion:reduce){.k-progress{display:none}}
 .k-split-line{padding-bottom:.08em}
+.k-confetti{position:fixed;top:0;left:0;z-index:70;pointer-events:none;width:9px;height:12px;border-radius:2px}
+.k-shine{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden;border-radius:inherit}
+.k-shine::before{content:"";position:absolute;top:-20%;bottom:-20%;width:38%;left:0;
+  background:linear-gradient(100deg,transparent,rgba(255,236,140,.0) 20%,rgba(255,236,140,.55) 50%,rgba(255,255,255,.0) 80%,transparent);
+  transform:translateX(var(--k-shine-x,-160%)) skewX(-18deg)}
 </style>
 <div class="k-progress" aria-hidden="true"></div>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" defer></script>
@@ -771,22 +776,14 @@ window.addEventListener('DOMContentLoaded',function(){
     });
 
     /* ── 4. Package cards: staggered rise, list items cascade, prices count up ── */
-    ST.batch('.grid .card',{start:'top 88%',once:true,onEnter:function(cards){
+    ST.batch('.grid .card:not(.mega)',{start:'top 88%',once:true,onEnter:function(cards){
       gsap.from(cards,{y:70,rotate:function(i){return i%2?2:-2},opacity:0,duration:.8,ease:M.enter,stagger:.12,overwrite:true,clearProps:'transform'});
       cards.forEach(function(c,ci){
         gsap.from(Q('li, .mcat',c),{x:16,opacity:0,duration:.35,ease:M.enter,stagger:.035,delay:.25+ci*.12});
-        countUp(c.querySelector('.price'),.3+ci*.12);
+        var pr=c.querySelector('.price');
+        if(pr)gsap.from(pr,{scale:.4,rotate:-12,opacity:0,duration:.7,delay:.3+ci*.12,ease:M.pop});
       });
     }});
-    function countUp(el,delay){
-      if(!el)return; var node=el.firstChild; if(!node||node.nodeType!==3)return;
-      var target=parseInt(node.nodeValue.replace(/[^\d]/g,''),10); if(!target)return;
-      var o={v:0};
-      gsap.to(o,{v:target,duration:1.1,delay:delay,ease:'power2.out',
-        onUpdate:function(){node.nodeValue=Math.round(o.v)},onComplete:function(){node.nodeValue=String(target)}});
-      gsap.from(el,{scale:.4,rotate:-12,duration:.7,delay:delay,ease:M.pop});
-    }
-
     /* mascots: parallax depth + gentle bob */
     Q('.mascot, .foot-mascot').forEach(function(m){
       gsap.fromTo(m,{yPercent:18},{yPercent:-18,ease:'none',scrollTrigger:{trigger:m.parentElement,start:'top bottom',end:'bottom top',scrub:true}});
@@ -813,10 +810,71 @@ window.addEventListener('DOMContentLoaded',function(){
       gsap.from(el,{y:24,opacity:0,duration:.6,ease:M.enter,scrollTrigger:{trigger:el,start:'top 95%',once:true}});
     });
 
+    /* ── 5b. Mega Festival: its own stage ── */
+    Q('.card.mega').forEach(function(mega){
+      // categories: North uses .mgroup blocks; Center uses li.grp headers followed by their items
+      var groups=Q('.mgroup',mega);
+      if(!groups.length){
+        groups=[]; var cur=null;
+        Q('ul > li',mega).forEach(function(li){
+          if(li.classList.contains('grp')||!cur){cur=[];groups.push(cur);}
+          cur.push(li);
+        });
+      }
+      var shine=document.createElement('div'); shine.className='k-shine'; shine.setAttribute('aria-hidden','true');
+      mega.appendChild(shine);
+      var top=mega.querySelector('.top'), badge=mega.querySelector('.ribbon, .mega-badge'), pr=mega.querySelector('.price');
+      // 1) entrance: rises, then the gold frame glows and the badge/price pop
+      var tl=gsap.timeline({scrollTrigger:{trigger:mega,start:'top 85%',once:true}});
+      tl.from(mega,{y:90,scale:.92,opacity:0,duration:.9,ease:M.enter,clearProps:'transform'})
+        .from([badge,pr].filter(Boolean),{scale:0,rotate:-15,duration:.6,ease:M.pop,stagger:.12},'-=.35')
+        .from(Q('.pkgname, .tag',top),{y:20,opacity:0,duration:.5,ease:M.enter,stagger:.1},'-=.45')
+        .fromTo(shine,{'--k-shine-x':'-160%'},{'--k-shine-x':'360%',duration:1.1,ease:'power2.inOut'},'-=.2')
+        .fromTo(mega,{boxShadow:'0 0 0 0 rgba(255,215,0,0)'},{boxShadow:'0 0 0 10px rgba(255,215,0,.35), 0 22px 50px rgba(8,15,60,.28)',duration:.5,yoyo:true,repeat:1,ease:'sine.inOut',clearProps:'boxShadow'},'<');
+      // 2) categories reveal one after another as you scroll through the card (scrubbed)
+      var rev=gsap.timeline({scrollTrigger:{trigger:mega,start:'top 70%',end:'bottom 85%',scrub:true}});
+      groups.forEach(function(g){ rev.from(g,{opacity:.12,x:24,ease:'none',duration:1}); });
+      // 3) shine sweeps again every few seconds while the card is on screen
+      var loop=gsap.timeline({repeat:-1,repeatDelay:3.5,paused:true});
+      loop.fromTo(shine,{'--k-shine-x':'-160%'},{'--k-shine-x':'360%',duration:1.2,ease:'power2.inOut'});
+      ST.create({trigger:mega,start:'top bottom',end:'bottom top',onToggle:function(st){st.isActive?loop.play():loop.pause()}});
+    });
+
+    /* ── 5c. Confetti burst when a package is picked ── */
+    var CC=['#E91E8C','#7CC520','#29B6F6','#FFD700','#ffffff','#243081'];
+    document.addEventListener('click',function(e){
+      var b=e.target.closest&&e.target.closest('.pick');
+      if(!b||b.getAttribute('aria-pressed')!=='true')return; // only on select, not on un-select
+      var r=b.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
+      for(var i=0;i<34;i++)(function(i){
+        var d=document.createElement('i'); d.className='k-confetti';
+        d.style.background=CC[i%CC.length]; if(i%3===0)d.style.borderRadius='50%';
+        document.body.appendChild(d);
+        var ang=Math.random()*Math.PI*2, dist=70+Math.random()*150;
+        gsap.set(d,{x:cx,y:cy,rotate:Math.random()*360,scale:.6+Math.random()*.7});
+        gsap.timeline({onComplete:function(){d.remove()}})
+          .to(d,{x:cx+Math.cos(ang)*dist,y:cy+Math.sin(ang)*dist*.8-60,rotate:'+=360',duration:.55,ease:'power3.out'})
+          .to(d,{y:'+=160',rotate:'+=200',opacity:0,duration:.9,ease:'power1.in'});
+      })(i);
+    });
+
+    /* ── 5d. Top nav hides while scrolling down, returns on scroll up ── */
+    var nav=document.querySelector('nav');
+    if(nav){
+      var shown=true, lastY=window.scrollY||0;
+      var showNav=function(v){ if(v===shown)return; shown=v; gsap.to(nav,{yPercent:v?0:-110,duration:v?.35:.25,ease:v?'power3.out':'power2.in',overwrite:true}); };
+      var onScroll=function(){
+        var y=lenis?lenis.scroll:(window.scrollY||0), d=y-lastY; lastY=y;
+        if(y<120)showNav(true); else if(d>4)showNav(false); else if(d<-4)showNav(true);
+      };
+      if(lenis)lenis.on('scroll',onScroll); else window.addEventListener('scroll',onScroll,{passive:true});
+      nav.addEventListener('focusin',function(){showNav(true)});
+    }
+
     /* ── 6. Desktop-only micro-interactions ── */
     if(desktop){
       // soft 3D tilt on package cards
-      Q('.grid .card').forEach(function(c){
+      Q('.grid .card:not(.mega)').forEach(function(c){
         c.addEventListener('pointerenter',function(){gsap.set(c,{transformPerspective:900})});
         var rx=gsap.quickTo(c,'rotationX',{duration:.5,ease:'power3'}), ry=gsap.quickTo(c,'rotationY',{duration:.5,ease:'power3'});
         c.addEventListener('pointermove',function(e){var r=c.getBoundingClientRect();

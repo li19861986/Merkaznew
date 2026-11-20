@@ -683,5 +683,170 @@ footer .disc{color:var(--muted);font-size:12.5px;margin-top:16px;font-weight:600
   }
 })();
 </script>
+<!-- ══════════ KIDOS MOTION LAYER · smooth scroll + scroll animations ══════════
+     Lenis (smooth scroll) + GSAP ScrollTrigger + SplitText.
+     Progressive enhancement: content is never hidden before the libraries load. If the CDN fails
+     or the user prefers reduced motion, the page works exactly as before. -->
+<style>
+html.lenis,html.lenis body{height:auto}
+.lenis.lenis-smooth{scroll-behavior:auto!important}
+.lenis.lenis-smooth [data-lenis-prevent]{overscroll-behavior:contain}
+.lenis.lenis-stopped{overflow:clip}
+.k-progress{position:fixed;top:0;right:0;left:0;height:4px;z-index:60;pointer-events:none;
+  background:linear-gradient(90deg,#29B6F6,#7CC520,#FFD700,#E91E8C);transform-origin:right center;transform:scaleX(0)}
+@media(prefers-reduced-motion:reduce){.k-progress{display:none}}
+.k-split-line{padding-bottom:.08em}
+</style>
+<div class="k-progress" aria-hidden="true"></div>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1/dist/lenis.min.js" defer></script>
+<script>
+window.addEventListener('DOMContentLoaded',function(){
+  'use strict';
+  var RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(RM||!window.gsap||!window.ScrollTrigger)return; // static page stays as-is
+  try{ run(); }catch(err){ if(window.console)console.warn('[kidos-motion]',err); }
+
+  function run(){
+    var gsap=window.gsap, ST=window.ScrollTrigger, Split=window.SplitText||null;
+    gsap.registerPlugin(ST); if(Split)gsap.registerPlugin(Split);
+
+    /* Motion tokens: one personality for the whole page */
+    var M={enter:'power3.out',pop:'back.out(1.7)',dur:.7,stagger:.07};
+    var Q=function(s,r){return [].slice.call((r||document).querySelectorAll(s))};
+    var desktop=matchMedia('(min-width: 768px) and (hover: hover)').matches;
+
+    /* ── 1. Smooth scroll: Lenis on GSAP's single ticker ── */
+    var lenis=null;
+    if(window.Lenis){
+      lenis=new window.Lenis({duration:1.15,autoRaf:false,anchors:{offset:-72}});
+      lenis.on('scroll',ST.update);
+      gsap.ticker.add(function(t){lenis.raf(t*1000)});
+      gsap.ticker.lagSmoothing(0);
+      // calculator's built-in scrollIntoView now goes through Lenis (no fighting)
+      var native=Element.prototype.scrollIntoView;
+      Element.prototype.scrollIntoView=function(o){
+        try{ lenis.scrollTo(this,{offset:-72,duration:1.2}); }catch(e){ return native.apply(this,arguments); }
+      };
+      // lock background scroll while the upgrade dialog is open
+      var ov=document.getElementById('ov');
+      if(ov){
+        ov.setAttribute('data-lenis-prevent','');
+        new MutationObserver(function(){ ov.classList.contains('open')?lenis.stop():lenis.start(); })
+          .observe(ov,{attributes:true,attributeFilter:['class']});
+      }
+    }
+
+    /* scroll progress bar (brand colors) */
+    var bar=document.querySelector('.k-progress');
+    if(bar)gsap.to(bar,{scaleX:1,ease:'none',scrollTrigger:{start:0,end:'max',scrub:true}});
+
+    /* ── 2. Hero ── */
+    var banner=document.querySelector('.hero-banner'), img=banner&&banner.querySelector('img');
+    var heroTl=gsap.timeline({defaults:{ease:M.enter}});
+    if(banner)heroTl.from(banner,{y:40,scale:.94,duration:.9}); // no opacity: banner is the LCP image
+    heroTl.from(Q('header.hero .year-badge, header.hero .region'),{y:24,scale:.6,opacity:0,duration:.6,ease:M.pop,stagger:.12},'-=.45');
+    var heroP=document.querySelector('header.hero p');
+    if(heroP&&Split){
+      Split.create(heroP,{type:'words',aria:'auto',autoSplit:true,onSplit:function(s){
+        return gsap.from(s.words,{y:18,opacity:0,duration:.5,ease:M.enter,stagger:.04,delay:.6});
+      }});
+    }
+    // parallax: banner image drifts + zooms slightly as you scroll past
+    if(img)gsap.fromTo(img,{scale:1,yPercent:0},{scale:1.1,yPercent:6,ease:'none',
+      scrollTrigger:{trigger:banner,start:'top top',end:'bottom top',scrub:true}});
+
+    /* ── 3. Section headings: badge pop + letter-by-letter title ── */
+    Q('.section-head').forEach(function(h){
+      var badge=h.querySelector('.badge'), h2=h.querySelector('h2'), sub=h.querySelector('h2 + span');
+      var tl=gsap.timeline({scrollTrigger:{trigger:h,start:'top 85%',once:true}});
+      if(badge)tl.from(badge,{scale:0,rotate:-160,duration:.7,ease:M.pop});
+      if(h2&&Split){
+        var sp=Split.create(h2,{type:'words,chars',mask:'chars',aria:'auto'});
+        tl.from(sp.chars,{yPercent:110,duration:.55,ease:M.enter,stagger:.03},'-=.4');
+      }else if(h2)tl.from(h2,{y:20,opacity:0,duration:.5},'-=.4');
+      if(sub&&sub!==h2)tl.from(sub,{y:10,opacity:0,duration:.4},'-=.25');
+    });
+
+    /* ── 4. Package cards: staggered rise, list items cascade, prices count up ── */
+    ST.batch('.grid .card',{start:'top 88%',once:true,onEnter:function(cards){
+      gsap.from(cards,{y:70,rotate:function(i){return i%2?2:-2},opacity:0,duration:.8,ease:M.enter,stagger:.12,overwrite:true,clearProps:'transform'});
+      cards.forEach(function(c,ci){
+        gsap.from(Q('li, .mcat',c),{x:16,opacity:0,duration:.35,ease:M.enter,stagger:.035,delay:.25+ci*.12});
+        countUp(c.querySelector('.price'),.3+ci*.12);
+      });
+    }});
+    function countUp(el,delay){
+      if(!el)return; var node=el.firstChild; if(!node||node.nodeType!==3)return;
+      var target=parseInt(node.nodeValue.replace(/[^\d]/g,''),10); if(!target)return;
+      var o={v:0};
+      gsap.to(o,{v:target,duration:1.1,delay:delay,ease:'power2.out',
+        onUpdate:function(){node.nodeValue=Math.round(o.v)},onComplete:function(){node.nodeValue=String(target)}});
+      gsap.from(el,{scale:.4,rotate:-12,duration:.7,delay:delay,ease:M.pop});
+    }
+
+    /* mascots: parallax depth + gentle bob */
+    Q('.mascot, .foot-mascot').forEach(function(m){
+      gsap.fromTo(m,{yPercent:18},{yPercent:-18,ease:'none',scrollTrigger:{trigger:m.parentElement,start:'top bottom',end:'bottom top',scrub:true}});
+      gsap.to(m,{rotate:3,duration:1.8,ease:'sine.inOut',yoyo:true,repeat:-1,transformOrigin:'50% 100%'});
+    });
+
+    /* ── 5. Upgrades ── */
+    ST.batch('.upcard',{start:'top 88%',once:true,onEnter:function(els){
+      gsap.from(els,{y:60,opacity:0,duration:.75,ease:M.enter,stagger:.12,overwrite:true,clearProps:'transform'});
+      els.forEach(function(u,ui){
+        gsap.from(Q('.row',u),{y:12,opacity:0,duration:.35,ease:M.enter,stagger:.03,delay:.2+ui*.12,clearProps:'transform,opacity'});
+      });
+    }});
+
+    /* extra strip: chips pop in */
+    Q('.extra').forEach(function(x){
+      var tl=gsap.timeline({scrollTrigger:{trigger:x,start:'top 88%',once:true}});
+      tl.from(x,{y:50,scale:.96,opacity:0,duration:.7,ease:M.enter})
+        .from(Q('.chips span',x),{scale:0,opacity:0,duration:.45,ease:M.pop,stagger:.06},'-=.3');
+    });
+
+    /* footer */
+    Q('footer .site, footer .disc').forEach(function(el){
+      gsap.from(el,{y:24,opacity:0,duration:.6,ease:M.enter,scrollTrigger:{trigger:el,start:'top 95%',once:true}});
+    });
+
+    /* ── 6. Desktop-only micro-interactions ── */
+    if(desktop){
+      // soft 3D tilt on package cards
+      Q('.grid .card').forEach(function(c){
+        c.addEventListener('pointerenter',function(){gsap.set(c,{transformPerspective:900})});
+        var rx=gsap.quickTo(c,'rotationX',{duration:.5,ease:'power3'}), ry=gsap.quickTo(c,'rotationY',{duration:.5,ease:'power3'});
+        c.addEventListener('pointermove',function(e){var r=c.getBoundingClientRect();
+          ry(((e.clientX-r.left)/r.width-.5)*7); rx(-((e.clientY-r.top)/r.height-.5)*7);});
+        c.addEventListener('pointerleave',function(){rx(0);ry(0)});
+      });
+      // magnetic WhatsApp / site buttons
+      Q('footer .site').forEach(function(b){
+        var x=gsap.quickTo(b,'x',{duration:.4,ease:'power3'}), y=gsap.quickTo(b,'y',{duration:.4,ease:'power3'});
+        b.addEventListener('pointermove',function(e){var r=b.getBoundingClientRect();
+          x((e.clientX-r.left-r.width/2)*.3); y((e.clientY-r.top-r.height/2)*.3);});
+        b.addEventListener('pointerleave',function(){x(0);y(0)});
+      });
+    }
+
+    /* balloons + confetti layers drift with scroll velocity for depth */
+    if(lenis){
+      var bl=document.getElementById('bl');
+      if(bl){var by=gsap.quickTo(bl,'y',{duration:.8,ease:'power3'});
+        lenis.on('scroll',function(l){by(gsap.utils.clamp(-60,60,-l.velocity*2))});}
+    }
+
+    /* layout settles after fonts/images → recompute trigger positions */
+    var refresh=function(){ST.refresh()};
+    if(document.fonts&&document.fonts.ready)document.fonts.ready.then(refresh);
+    window.addEventListener('load',refresh);
+  }
+});
+</script>
+<!-- ══════════ /KIDOS MOTION LAYER ══════════ -->
+
 </body>
 </html>
